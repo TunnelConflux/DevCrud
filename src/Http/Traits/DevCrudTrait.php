@@ -12,9 +12,8 @@ namespace TunnelConflux\DevCrud\Http\Traits;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use TunnelConflux\DevCrud\Http\Requests\SaveRequest;
-use TunnelConflux\DevCrud\Http\Requests\UpdateRequest;
-use TunnelConflux\DevCrud\Models\DevCrudModel;
+use TunnelConflux\DevCrud\Http\Requests\SaveFormRequest;
+use TunnelConflux\DevCrud\Http\Requests\UpdateFormRequest;
 
 trait DevCrudTrait
 {
@@ -38,7 +37,7 @@ trait DevCrudTrait
         return view('crud.form', (array)$this);
     }
 
-    public function store(SaveRequest $request, DevCrudModel $devCrudModel = null)
+    public function store(SaveFormRequest $request)
     {
         $files = [];
 
@@ -122,7 +121,7 @@ trait DevCrudTrait
         return view('crud.form', (array)$this);
     }
 
-    public function update(UpdateRequest $request)
+    public function update(UpdateFormRequest $request)
     {
         $files = [];
 

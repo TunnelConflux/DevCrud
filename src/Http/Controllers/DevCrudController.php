@@ -9,14 +9,13 @@
 
 namespace TunnelConflux\DevCrud\Http\Controllers;
 
-use Exception;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
-use TunnelConflux\DevCrud\Http\Controllers\Traits\CrudAble;
 use TunnelConflux\DevCrud\Http\Traits\DevCrudTrait;
 use TunnelConflux\DevCrud\Models\DevCrudModel;
 
@@ -25,10 +24,19 @@ class DevCrudController extends Controller
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
     use DevCrudTrait;
 
+    const ACTION_SHOW   = 'show';
+    const ACTION_CREATE = 'create';
+    const ACTION_STORE  = 'store';
+    const ACTION_EDIT   = 'edit';
+    const ACTION_UPDATE = 'update';
+    const ACTION_DELETE = 'delete';
+
     public $data;
     public $page;
     public $pageTitle;
     public $routePrefix;
+    public $viewPrefix;
+
     public $formTitle;
     /**
      * Title, input_type, DB_column,
@@ -42,18 +50,19 @@ class DevCrudController extends Controller
     public $formActionMethod;
     public $formIgnoreItems;
     public $formRequiredItems = [];
-    public $formUpdateIgnoreItems;
+    public $formIgnoreItemsOnUpdate;
     public $formHasParents;
+
     public $paginate;
     public $uploadPath;
     public $actionMessage;
-    public $indexListColumns;
 
-    public $indexNewAction;
-    public $indexViewAction;
-    public $indexEditAction;
-    public $indexDeleteAction;
-    public $indexItemPerPage = 15;
+    protected $isCreatable = true;
+    protected $isEditable  = true;
+    protected $isViewable  = true;
+    protected $isDeletable = true;
+    protected $listColumns;
+    protected $itemPerPage = 15;
 
     protected $homeRoute           = "dashboard";
     protected $redirectAfterAction = true;
@@ -62,11 +71,10 @@ class DevCrudController extends Controller
      * @var \TunnelConflux\DevCrud\Models\DevCrudModel
      */
     protected $model;
-    protected $viewPrefix;
 
     public function __construct(DevCrudModel $model)
     {
-        /*if (request()->route('id_or_slug')) {
+        if (request()->route('id_or_slug')) {
             $this->formActionId = request()->route('id_or_slug');
         }
 
@@ -78,27 +86,23 @@ class DevCrudController extends Controller
         $this->routePrefix = $pageTag[0];
         $this->uploadPath  = getUploadPath($this->model);
 
-        $this->actionMessage         = [];
-        $this->formActionRoute       = Route::currentRouteName();
-        $this->formActionMethod      = (Route::is('*.edit') && $this->formActionId) ? 'PATCH' : 'POST';
-        $this->formRequiredItems     = $this->model->getRequiredItems();
-        $this->formIgnoreItems       = $this->model->getIgnoreItems();
-        $this->formUpdateIgnoreItems = $this->model->getIgnoreItemsOnUpdate();
-        $this->formHasParents        = $this->model->getRelationalFields(request()->route('id_or_slug'), get_class($this->model));
+        $this->actionMessage           = [];
+        $this->formActionRoute         = Route::currentRouteName();
+        $this->formActionMethod        = (Route::is('*.edit') && $this->formActionId) ? 'PATCH' : 'POST';
+        $this->formRequiredItems       = $this->model->getRequiredItems();
+        $this->formIgnoreItems         = $this->model->getIgnoreItems();
+        $this->formIgnoreItemsOnUpdate = $this->model->getIgnoreItemsOnUpdate();
+        $this->formHasParents          = $this->model->getRelationalFields(request()->route('id_or_slug'), get_class($this->model));
 
-        $this->indexListColumns  = $this->model->getListColumns();
-        $this->indexNewAction    = true;
-        $this->indexViewAction   = true;
-        $this->indexEditAction   = true;
-        $this->indexDeleteAction = true;
+        $this->listColumns = $this->model->getListColumns();
 
         if (!Route::is('*.create')) {
             $this->setData();
         }
 
-        //if (Route::is('*.create') || Route::is('*.edit') || Route::is('*.index') || Route::is('*.view')) {
-        $this->setFormItems();
-        //}*/
+        if (Route::is('*.create') || Route::is('*.edit')) {
+            $this->setFormItems();
+        }
     }
 
     public function setData()
@@ -116,17 +120,17 @@ class DevCrudController extends Controller
                 $query = $query->searchAllColumns($value, ["created_at"]);
             }
 
-            $this->data = $query->paginate($this->indexItemPerPage);
-            $this->setIndexListColumns();
+            $this->data = $query->paginate($this->itemPerPage);
+            $this->setListColumns();
         }
 
         $this->checkData();
     }
 
-    public function setIndexListColumns()
+    public function setListColumns()
     {
         $listItem = [];
-        $data     = $this->model->getIndexListColumns();
+        $data     = $this->model->getListColumns();
 
         if (empty($data)) {
             $data = $this->model->getFillable();
@@ -137,7 +141,7 @@ class DevCrudController extends Controller
             $listItem[$item] = str_replace('_', ' ', $title);
         }
 
-        $this->indexListColumns = $listItem;
+        $this->listColumns = $listItem;
     }
 
     public function checkData()
@@ -156,14 +160,14 @@ class DevCrudController extends Controller
     public function setFormItems()
     {
         $formItems = [];
-        $types     = $this->model->getFormInputTypes();
+        $types     = $this->model->getInputTypes();
         $dataItems = $this->formRequiredItems;
 
         if (count($dataItems) < 1) {
             $dataItems = $this->model->getFillable();
         }
 
-        foreach ($this->model->getFormInfoItems() as $item) {
+        foreach ($this->model->getInfoItems() as $item) {
             $title = ucwords(str_replace('_', ' ', $item));
 
             if (in_array($item, $types['textarea'])) {
@@ -183,7 +187,7 @@ class DevCrudController extends Controller
 
         foreach ($dataItems as $item) {
 
-            if (in_array($item, $this->model->getFormInfoItems())) {
+            if (in_array($item, $this->model->getInfoItems())) {
                 continue;
             }
 
@@ -219,7 +223,7 @@ class DevCrudController extends Controller
         foreach ($this->formHasParents as $key => $item) {
             $select    = 'select';
             $title     = ucwords(str_replace('_', ' ', $key));
-            $joinModel = $this->model->getFormRelationalModel($key);
+            $joinModel = $this->model->getRelationalModel($key);
 
             if ($joinModel->getJoinType() == 'manyToMany') {
                 $select .= '2';
@@ -233,52 +237,6 @@ class DevCrudController extends Controller
         $this->formItems = $formItems;
     }
 
-    public function getValidationRules()
-    {
-        $fields = [];
-
-        if (!$this->model instanceof DevCrudModel) {
-            return $fields;
-        }
-
-        if (count($this->formRequiredItems) > 0) {
-            foreach ($this->formRequiredItems as $field) {
-                $fields[$field] = !in_array($field, $this->formIgnoreItems) ? ['required'] : ['nullable'];
-            }
-        } else {
-            foreach ($this->model->getFillable() as $field) {
-                $fields[$field] = !in_array($field, $this->formIgnoreItems) ? ['required'] : ['nullable'];
-            }
-        }
-
-        if (Route::is('*.edit') && count($this->formUpdateIgnoreItems) > 0) {
-            foreach ($fields as $key => $val) {
-                if (in_array($key, $this->formUpdateIgnoreItems)) {
-                    try {
-                        if (is_string($fields[$key])) {
-                            $fields[$key] = str_replace("required", "nullable", $fields[$key]);
-                        } elseif (is_array($fields[$key]) && count((array)$fields[$key]) > 0) {
-                            $fields[$key] = array_map(function ($v) {
-                                return ($v == "required") ? "nullable" : $v;
-                            }, $fields[$key]);
-                        } else {
-                            $fields[$key] = ["nullable"];
-                        }
-                    } catch (Exception $e) {
-
-                    }
-                }
-            }
-        }
-
-        return $fields;
-    }
-
-    public function getValidationMessages()
-    {
-        return [];
-    }
-
     public function redirectToSingleView($url = null)
     {
         if ($url) {
@@ -288,28 +246,40 @@ class DevCrudController extends Controller
         }
     }
 
-    public function checkActionStatus($actionStatus)
+    /**
+     * @param $hasAccess
+     *
+     * @return \Illuminate\Http\RedirectResponse|null
+     */
+    public function hasAccess($hasAccess): ?RedirectResponse
     {
-        $message = ['warning' => 'This Action disable !'];
+        $message = ['warning' => 'This Action is not permitted !'];
         $query   = ["query" => request()->query('query'), "page" => request()->query('page')];
 
-        if (!$actionStatus) {
+        if (!$hasAccess) {
             return redirect()->route("{$this->routePrefix}.index", $query)->with($message)->send();
         }
+
+        return null;
     }
 
-    public function checkNewActionStatus()
+    public function hasViewAccess(): void
     {
-        $this->checkActionStatus($this->indexNewAction);
+        $this->hasAccess($this->isViewable);
     }
 
-    public function checkEditActionStatus()
+    public function hasCreateAccess(): void
     {
-        $this->checkActionStatus($this->indexEditAction);
+        $this->hasAccess($this->isCreatable);
     }
 
-    public function checkDeleteActionStatus()
+    public function hasEditAccess(): void
     {
-        $this->checkActionStatus($this->indexDeleteAction);
+        $this->hasAccess($this->isEditable);
+    }
+
+    public function hasDeleteAccess(): void
+    {
+        $this->hasAccess($this->isDeletable);
     }
 }
