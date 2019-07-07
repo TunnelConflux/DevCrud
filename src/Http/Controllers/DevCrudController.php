@@ -2,7 +2,7 @@
 /**
  * Project      : DevCrud
  * File Name    : DevCrudController.php
- * User         : Abu Bakar Siddique
+ * Author         : Abu Bakar Siddique
  * Email        : absiddique.live@gmail.com
  * Date[Y/M/D]  : 2019/06/26 6:21 PM
  */
@@ -57,12 +57,12 @@ class DevCrudController extends Controller
     public $uploadPath;
     public $actionMessage;
 
-    protected $isCreatable = true;
-    protected $isEditable  = true;
-    protected $isViewable  = true;
-    protected $isDeletable = true;
-    protected $listColumns;
-    protected $itemPerPage = 15;
+    public $isCreatable = true;
+    public $isEditable  = true;
+    public $isViewable  = true;
+    public $isDeletable = true;
+    public $listColumns;
+    public $itemPerPage = 15;
 
     protected $homeRoute           = "dashboard";
     protected $redirectAfterAction = true;

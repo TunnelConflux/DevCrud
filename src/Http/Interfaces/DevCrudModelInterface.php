@@ -2,7 +2,7 @@
 /**
  * Project      : DevCrud
  * File Name    : DevCrudModelInterface.php
- * User         : Abu Bakar Siddique
+ * Author         : Abu Bakar Siddique
  * Email        : absiddique.live@gmail.com
  * Date[Y/M/D]  : 2019/06/26 6:34 PM
  */

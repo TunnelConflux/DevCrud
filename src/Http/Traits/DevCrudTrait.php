@@ -1,8 +1,8 @@
 <?php
 /**
  * Project      : DevCrud
- * File Name    : CrudAble.php
- * User         : Abu Bakar Siddique
+ * File Name    : DevCrudTrait.php
+ * Author         : Abu Bakar Siddique
  * Email        : absiddique.live@gmail.com
  * Date[Y/M/D]  : 2019/06/29 6:36 PM
  */
@@ -23,25 +23,25 @@ trait DevCrudTrait
             return view("{$this->viewPrefix}.index", (array)$this);
         }
 
-        return view('crud.index', (array)$this);
+        return view("easy-crud::index", (array)$this);
     }
 
     public function create()
     {
-        $this->checkNewActionStatus();
+        $this->hasCreateAccess();
 
         if (view()->exists("{$this->viewPrefix}.form")) {
             return view("{$this->viewPrefix}.form", (array)$this);
         }
 
-        return view('crud.form', (array)$this);
+        return view('easy-crud::form', (array)$this);
     }
 
     public function store(SaveFormRequest $request)
     {
         $files = [];
 
-        $this->checkNewActionStatus();
+        $this->hasCreateAccess();
         $this->validate($request, $this->getValidationRules(), $this->getValidationMessages());
 
         foreach ($this->formItems as $key => $item) {
@@ -97,7 +97,7 @@ trait DevCrudTrait
 
     public function show()
     {
-        $this->checkActionStatus($this->indexViewAction);
+        $this->hasViewAccess();
 
         if (view()->exists("{$this->viewPrefix}.show")) {
             return view("{$this->viewPrefix}.show", (array)$this);
@@ -108,7 +108,7 @@ trait DevCrudTrait
 
     public function edit()
     {
-        $this->checkEditActionStatus();
+        $this->hasEditAccess();
 
         if ($this->data->password ?? null) {
             $this->data->password = "";
@@ -125,7 +125,7 @@ trait DevCrudTrait
     {
         $files = [];
 
-        $this->checkEditActionStatus();
+        $this->hasEditAccess();
         $this->validate($request, $this->getValidationRules());
 
         foreach ($this->formItems as $key => $item) {
@@ -181,7 +181,7 @@ trait DevCrudTrait
 
     public function destroy()
     {
-        $this->checkDeleteActionStatus();
+        $this->hasDeleteAccess();
 
         if ($this->data) {
             $images = [];
