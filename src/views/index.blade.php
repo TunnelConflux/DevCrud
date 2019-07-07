@@ -8,43 +8,44 @@
     <div class="card-body table-responsive p-0">
         <table class="table table-hover">
             <thead>
-            <tr>
-                <th>ID</th>
-                <th>User</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Reason</th>
+            <tr class="text-capitalize">
+                <th style="width: 25px">SL</th>
+                @foreach($listColumns as $item)
+                    <th>{{$item}}</th>
+                @endforeach
+                @if(@$isCreatable || @$isEditable  || @$isViewable  || @$isDeletable )
+                    <th style=" min-width: 80px; ">Action</th>
+                @endif
             </tr>
             </thead>
             <tbody>
-            <tr>
-                <td>183</td>
-                <td>John Doe</td>
-                <td>11-7-2014</td>
-                <td><span class="tag tag-success">Approved</span></td>
-                <td>Bacon ipsum dolor sit amet salami venison chicken flank fatback doner.</td>
-            </tr>
-            <tr>
-                <td>219</td>
-                <td>Alexander Pierce</td>
-                <td>11-7-2014</td>
-                <td><span class="tag tag-warning">Pending</span></td>
-                <td>Bacon ipsum dolor sit amet salami venison chicken flank fatback doner.</td>
-            </tr>
-            <tr>
-                <td>657</td>
-                <td>Bob Doe</td>
-                <td>11-7-2014</td>
-                <td><span class="tag tag-primary">Approved</span></td>
-                <td>Bacon ipsum dolor sit amet salami venison chicken flank fatback doner.</td>
-            </tr>
-            <tr>
-                <td>175</td>
-                <td>Mike Doe</td>
-                <td>11-7-2014</td>
-                <td><span class="tag tag-danger">Denied</span></td>
-                <td>Bacon ipsum dolor sit amet salami venison chicken flank fatback doner.</td>
-            </tr>
+            @forelse($data as $key => $item)
+                <tr id="sim-{{ $item->id }}">
+                    <td>{{ $key + 1 + (($data->currentPage() <= 1) ? 0 : (($data->currentPage() - 1) * $data->perPage())) }}</td>
+                    
+                    @foreach($listColumns as $k => $v)
+                        @if (in_array($k, ['status', 'is_active']))
+                            <td>{{ getStatus(($item->{$k}?:0))}}</td>
+                        @elseif (@$formItems[$k][1] == 'image')
+                            <td><img style="max-height: 100px" src="{{ getFileUrl($uploadPath, $item->{$k}) }}" /></td>
+                        @elseif (is_object($item->{$k}))
+                            <td>{{ $item->{$k}->title }}</td>
+                        @else
+                            @if(@$item->{$k})
+                                <td>{{ $item->{$k} }}</td>
+                            @else
+                                <td>N/A</td>
+                            @endif
+                        @endif
+                    @endforeach
+                    
+                    @include('easy-crud::partials.list_view_action')
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="50" class="text-center"><b>No record found</b></td>
+                </tr>
+            @endforelse
             </tbody>
         </table>
     </div>
