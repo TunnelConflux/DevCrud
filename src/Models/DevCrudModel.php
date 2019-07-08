@@ -141,7 +141,7 @@ class DevCrudModel extends Model implements DevCrudModelInterface
      */
     public function getInfoItems(): array
     {
-        return $this->infoItems;
+        return empty($this->infoItems) ? $this->fillable : $this->infoItems;
     }
 
     /**

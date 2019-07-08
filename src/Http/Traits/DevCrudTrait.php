@@ -42,7 +42,6 @@ trait DevCrudTrait
         $files = [];
 
         $this->hasCreateAccess();
-        $this->validate($request, $this->getValidationRules(), $this->getValidationMessages());
 
         foreach ($this->formItems as $key => $item) {
             if ($request->file($key)) {
@@ -103,7 +102,7 @@ trait DevCrudTrait
             return view("{$this->viewPrefix}.show", (array)$this);
         }
 
-        return view('crud.show', (array)$this);
+        return view('easy-crud::show', (array)$this);
     }
 
     public function edit()

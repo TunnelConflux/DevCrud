@@ -61,6 +61,7 @@ class DevCrudController extends Controller
     public $isEditable  = true;
     public $isViewable  = true;
     public $isDeletable = true;
+    public $infoItems;
     public $listColumns;
     public $itemPerPage = 15;
 
@@ -94,6 +95,7 @@ class DevCrudController extends Controller
         $this->formIgnoreItemsOnUpdate = $this->model->getIgnoreItemsOnUpdate();
         $this->formHasParents          = $this->model->getRelationalFields(request()->route('id_or_slug'), get_class($this->model));
 
+        $this->infoItems   = $this->model->getInfoItems();
         $this->listColumns = $this->model->getListColumns();
 
         if (!Route::is('*.create')) {
@@ -186,7 +188,6 @@ class DevCrudController extends Controller
         }
 
         foreach ($dataItems as $item) {
-
             if (in_array($item, $this->model->getInfoItems())) {
                 continue;
             }
