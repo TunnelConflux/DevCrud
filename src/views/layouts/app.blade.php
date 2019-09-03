@@ -27,21 +27,25 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <!-- Navbar -->
     <nav class="main-header navbar navbar-expand navbar-white navbar-light border-bottom">
         @section("main-navbar")
-            @include("easy-crud::partials.navbar")
+            @include("dev-crud::partials.navbar")
         @show
     </nav>
     
     <!-- Main Sidebar Container -->
     <aside class="main-sidebar elevation-4 sidebar-dark-info">
         @section("main-sidebar")
-            @include("easy-crud::partials.sidebar")
+            @if (view()->exists("layouts.partials.sidebar"))
+                @include("layouts.partials.sidebar")
+            @else
+                @include("dev-crud::partials.sidebar")
+            @endif
         @show
     </aside>
     
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
         @section("main-content")
-            @include("easy-crud::partials.content")
+            @include("dev-crud::partials.content")
         @show
     </div>
     

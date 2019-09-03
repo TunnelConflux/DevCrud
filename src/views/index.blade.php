@@ -1,4 +1,4 @@
-@extends('easy-crud::layouts.info')
+@extends('dev-crud::layouts.info')
 
 @section('blockTitle')
     {{ $pageTitle }}
@@ -27,7 +27,7 @@
                     
                     @foreach($listColumns as $k => $v)
                         @if (in_array($k, ['status', 'is_active']))
-                            <td>{{ getStatus(($item->{$k}?:0))}}</td>
+                            <td>{{ \TunnelConflux\DevCrud\Helpers\DevCrudHelper::getStatus(($item->{$k}?:0))}}</td>
                         @elseif (@$formItems[$k][1] == 'image')
                             <td><img style="max-height: 100px" src="{{ getFileUrl($uploadPath, $item->{$k}) }}" /></td>
                         @elseif (is_object($item->{$k}))
@@ -41,7 +41,7 @@
                         @endif
                     @endforeach
                     
-                    @include('easy-crud::partials.list_view_action')
+                    @include('dev-crud::partials.list_view_action')
                 </tr>
             @empty
                 <tr>

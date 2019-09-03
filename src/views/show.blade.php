@@ -1,4 +1,4 @@
-@extends('easy-crud::layouts.info')
+@extends('dev-crud::layouts.info')
 
 @section('blockTitle')
     {{ $pageTitle }}
@@ -7,12 +7,13 @@
 @section('dataBlock')
     <div class="card-body text-justify">
         <div class="col-md-6">
-            @foreach($infoItems as $key => $val)
-                @if ($key == 'status')
-                    <label>{{ ucwords(str_replace('_', ' ', $key)) }}: </label> {{ getStatus(($data->{$key}?:0)) }} <br>
-                @elseif(!in_array(@$infoItems[$key][1], ['image', 'file', 'video']) && $key != 'password')
+            @foreach($infoItems as $val)
+                @if ($val == 'status')
+                    <label>{{ ucwords(str_replace('_', ' ', $val)) }}: </label>
+                    {{ \TunnelConflux\DevCrud\Helpers\DevCrudHelper::getStatus(($data->{$val}?:0)) }} <br>
+                @elseif(!in_array(@$infoItems[$val][1], ['image', 'file', 'video']) && $val != 'password')
                     @php
-                        $tempKey = str_replace(['_id', '_'], ['',' '], $key);
+                        $tempKey = str_replace(['_id', '_'], ['',' '], $val);
                     @endphp
                     <label>{{ ucwords($tempKey) }}: </label>
                     @if (is_iterable($data->{$tempKey}))
@@ -36,11 +37,10 @@
                         @endif
                         <br />
                     @else
-                        @if (preg_match("/(content|description)/i",$key))
-                            {{--<p>{!! $data->{$key}?$data->{$key}:"N/A" !!}</p>--}}
-                            <p>{{ $data->{$key}?strip_tags($data->{$key}):"N/A" }}</p>
+                        @if (preg_match("/(content|description)/i",$val))
+                            <p>{{ $data->{$val}?strip_tags($data->{$val}):"N/A" }}</p>
                         @else
-                            {{ $data->{$key}?strip_tags($data->{$key}):"N/A" }} <br>
+                            {{ $data->{$val}?:"N/A" }} <br>
                         @endif
                     @endif
                 @endif
@@ -60,6 +60,6 @@
         </div>
     </div>
     <div class="card-footer">
-        @include('partials.detail_view_action')
+        @include('dev-crud::partials.detail_view_action')
     </div>
 @endsection

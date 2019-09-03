@@ -1,4 +1,4 @@
-@extends('easy-crud::layouts.info')
+@extends('dev-crud::layouts.info')
 
 @section('dataBlock')
     @yield('form')

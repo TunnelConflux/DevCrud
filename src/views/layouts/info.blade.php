@@ -1,11 +1,11 @@
-@extends('easy-crud::layouts.app')
+@extends('dev-crud::layouts.app')
 
 @section('content')
     <div class="row">
         <div class="col-12">
             <div class="card card-default">
                 <div class="card-header">
-                    <h3 class="card-title text-capitalize">
+                    <h3 class="card-title py-2">
                         {{--<i class="fas fa-bullhorn"></i>--}}
                         @yield('blockTitle')
                         @if (!Route::is("*.create") && $isCreatable)
@@ -58,7 +58,7 @@
                     @endif
                 </div>
             
-                @include('partials.action_notification')
+                @include('dev-crud::partials.action_notification')
                 @yield('dataBlock')
             </div>
             <!-- /.card -->
