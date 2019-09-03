@@ -15,5 +15,12 @@
     "psr-4": {
       "TunnelConflux\\DevCrud\\": "src/"
     }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "TunnelConflux\\DevCrud\\DevCrudServiceProvider"
+      ]
+    }
   }
 }
