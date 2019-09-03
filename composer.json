@@ -7,7 +7,10 @@
       "email": "absiddique.live@gmail.com"
     }
   ],
-  "require": {},
+  "require": {
+    "intervention/image": "^2.4",
+    "laravelcollective/html": "^5.8"
+  },
   "autoload": {
     "psr-4": {
       "TunnelConflux\\DevCrud\\": "src/"
