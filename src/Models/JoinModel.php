@@ -1,6 +1,17 @@
 <?php
 
+/**
+ * Project      : DevCrud
+ * File Name    : JoinModel.php
+ * Author       : Abu Bakar Siddique
+ * Email        : absiddique.live@gmail.com
+ * Date[Y/M/D]  : 2019/07/09 12:17 PM
+ */
+
 namespace TunnelConflux\DevCrud\Models;
+
+use TunnelConflux\DevCrud\Helpers\DevCrudHelper as Helper;
+use TunnelConflux\DevCrud\Models\Enums\JoinTypes;
 
 /**
  * Class JoinModel
@@ -17,38 +28,39 @@ class JoinModel
     protected $with;
     protected $withDisplayKey;
     protected $scopes;
+    protected $pivotExtra = [];
+    protected $optionPrefix = [];
 
     /**
      * JoinModel constructor.
      *
-     * @param string      $model
-     * @param string      $selectKey
-     * @param string      $displayKey
+     * @param string $model
+     * @param string $selectKey
+     * @param string $displayKey
      * @param null|string $ignoreKey
-     * @param string      $joinType
+     * @param string $joinType
      * @param null|string $with
      * @param null|string $withDisplayKey
-     * @param array       $scopes
+     * @param array $scopes
      */
     public function __construct(
         $model,
         $selectKey,
         $displayKey,
+        $joinType = JoinTypes::OneToOne,
         $ignoreKey = null,
-        $joinType = 'oneToOne',
         array $scopes = [],
         $with = null,
         $withDisplayKey = "title"
-    )
-    {
-        $this->model          = $model;
-        $this->selectKey      = $selectKey;
-        $this->displayKey     = $displayKey;
-        $this->ignoreKey      = $ignoreKey ?? $selectKey;
-        $this->joinType       = $joinType;
-        $this->with           = $with;
+    ) {
+        $this->model = $model;
+        $this->selectKey = $selectKey;
+        $this->displayKey = $displayKey;
+        $this->ignoreKey = $ignoreKey ?? $selectKey;
+        $this->joinType = $joinType;
+        $this->with = $with;
         $this->withDisplayKey = $withDisplayKey;
-        $this->scopes         = $scopes;
+        $this->scopes = $scopes;
     }
 
     /**
@@ -62,7 +74,7 @@ class JoinModel
     /**
      * @param $model
      *
-     * @return \App\Models\Crud\JoinModel
+     * @return JoinModel
      */
     public function setModel($model): self
     {
@@ -82,7 +94,7 @@ class JoinModel
     /**
      * @param $selectKey
      *
-     * @return \App\Models\Crud\JoinModel
+     * @return JoinModel
      */
     public function setSelectKey($selectKey): self
     {
@@ -102,7 +114,7 @@ class JoinModel
     /**
      * @param $displayKey
      *
-     * @return \App\Models\Crud\JoinModel
+     * @return JoinModel
      */
     public function setDisplayKey($displayKey): self
     {
@@ -122,7 +134,7 @@ class JoinModel
     /**
      * @param $ignoreKey
      *
-     * @return \App\Models\Crud\JoinModel
+     * @return JoinModel
      */
     public function setIgnoreKey($ignoreKey): self
     {
@@ -142,7 +154,7 @@ class JoinModel
     /**
      * @param $joinType
      *
-     * @return \App\Models\Crud\JoinModel
+     * @return JoinModel
      */
     public function setJoinType($joinType): self
     {
@@ -162,7 +174,7 @@ class JoinModel
     /**
      * @param $with
      *
-     * @return \App\Models\Crud\JoinModel
+     * @return JoinModel
      */
     public function setWith($with): self
     {
@@ -182,7 +194,7 @@ class JoinModel
     /**
      * @param $withDisplayKey
      *
-     * @return \App\Models\Crud\JoinModel
+     * @return JoinModel
      */
     public function setWithDisplayKey($withDisplayKey): self
     {
@@ -201,9 +213,9 @@ class JoinModel
 
     /**
      * @param array|string $scopes
-     * @param bool         $replace
+     * @param bool $replace
      *
-     * @return \App\Models\Crud\JoinModel
+     * @return JoinModel
      */
     public function setScopes($scopes, $replace = false): self
     {
@@ -212,6 +224,52 @@ class JoinModel
         } elseif (is_array($scopes)) {
             $replace ? ($this->scopes = $scopes) : ($this->scopes = array_merge($this->scopes, $scopes));
         }
+
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPivotExtra()
+    {
+        return $this->pivotExtra;
+    }
+
+    /**
+     * @param array|string $pivotExtra
+     *
+     * @return JoinModel
+     */
+    public function setPivotExtra($pivotExtra): self
+    {
+        if (is_array($pivotExtra)) {
+            $this->pivotExtra = $pivotExtra;
+
+            return $this;
+        }
+
+        is_string($pivotExtra) ? (Helper::arrayPush($this->pivotExtra, $pivotExtra)) : null;
+
+        return $this;
+    }
+
+    /**
+     * @return array
+     */
+    public function getOptionPrefix(): array
+    {
+        return $this->optionPrefix;
+    }
+
+    /**
+     * @param array $optionPrefix
+     *
+     * @return JoinModel
+     */
+    public function setOptionPrefix(array $optionPrefix): self
+    {
+        $this->optionPrefix = $optionPrefix;
 
         return $this;
     }

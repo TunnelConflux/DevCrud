@@ -2,34 +2,60 @@
 /**
  * Project      : DevCrud
  * File Name    : DevCrudModel.php
- * Author         : Abu Bakar Siddique
+ * Author       : Abu Bakar Siddique
  * Email        : absiddique.live@gmail.com
  * Date[Y/M/D]  : 2019/06/26 6:34 PM
  */
 
 namespace TunnelConflux\DevCrud\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
-use TunnelConflux\DevCrud\Http\Interfaces\DevCrudModelInterface;
+use TunnelConflux\DevCrud\Contracts\DevCrudModel as DevCrudModelContract;
+use TunnelConflux\DevCrud\Helpers\DevCrudHelper as Helper;
+use TunnelConflux\DevCrud\Models\Enums\InputTypes;
+use TunnelConflux\DevCrud\Models\Enums\JoinTypes;
 
-class DevCrudModel extends Model implements DevCrudModelInterface
+class DevCrudModel extends Model implements DevCrudModelContract
 {
     protected $inputTypes = [
-        'file'     => ['cv',],
-        'image'    => ['cover', 'image', 'thumb', 'thumbnail', 'thumb_image', 'cover_sd', 'image_sd', 'thumb_sd', 'thumbnail_sd', 'thumb_image_sd', 'meta_image'],
-        'video'    => ['video',],
-        'textarea' => ['description', 'short_description', 'content', 'short_content', 'text', 'short_text', 'meta_description'],
-        'select'   => ['status'],
+        InputTypes::FILE     => ['cv',],
+        InputTypes::IMAGE    => [
+            'cover',
+            'image',
+            'thumb',
+            'thumbnail',
+            'thumb_image',
+            'cover_sd',
+            'image_sd',
+            'thumb_sd',
+            'thumbnail_sd',
+            'thumb_image_sd',
+            'meta_image',
+        ],
+        InputTypes::VIDEO    => ['video',],
+        InputTypes::TEXTAREA => [
+            'description',
+            'short_description',
+            'content',
+            'short_content',
+            'text',
+            'short_text',
+            'address',
+            'meta_description',
+        ],
+        InputTypes::SELECT   => ['status'],
+        InputTypes::YES_NO   => [],
     ];
 
     protected $infoItems           = [];
     protected $requiredItems       = [];
+    protected $readOnlyItems       = [];
     protected $ignoreItems         = [];
     protected $ignoreItemsOnUpdate = [];
-    /* @var \TunnelConflux\DevCrud\Models\JoinModel[] */
+    /* @var JoinModel[] */
     protected $relationalFields = [];
     protected $listColumns      = [];
     protected $searchColumns    = [];
@@ -52,13 +78,13 @@ class DevCrudModel extends Model implements DevCrudModelInterface
             }
 
             if (in_array(self::SLUG_NAME, $cols) && $item->autoSlug) {
-                $item->{self::SLUG_NAME} = getSlug($item, $item->{self::SLUG_FROM});
+                $item->{self::SLUG_NAME} = Helper::makeSlug($item, $item->{self::SLUG_FROM});
             }
         });
 
         static::updating(function (self $item) {
             if (Schema::hasColumn($item->getTable(), self::SLUG_NAME) && $item->refreshSlug) {
-                $item->{self::SLUG_NAME} = getSlug($item, $item->{self::SLUG_FROM});
+                $item->{self::SLUG_NAME} = Helper::makeSlug($item, $item->{self::SLUG_FROM});
             }
         });
     }
@@ -95,18 +121,18 @@ class DevCrudModel extends Model implements DevCrudModelInterface
         $items = [];
 
         foreach ($this->relationalFields as $key => $field) {
-            $model = $field->getModel()::query();
+            $model = app($field->getModel());
 
-            if (in_array($field->getJoinType(), ['oneToOne', 'oneToMany']) && $parentModel == $field->getModel()) {
-                $model->where($field->getIgnoreKey(), '!=', $ignore);
+            if (in_array($field->getJoinType(), [JoinTypes::OneToOne, JoinTypes::OneToMany]) && $parentModel == $field->getModel()) {
+                $model = $model->where($field->getIgnoreKey(), '!=', $ignore);
             }
 
             foreach ($field->getScopes() as $scope) {
-                $model->{$scope}();
+                $model = $model->{$scope}();
             }
 
             if ($field->getWith()) {
-                $data        = $items[$key] = $model->with([$field->getWith()])->get();
+                $data = $items[$key] = $model->with([$field->getWith()])->get();
                 $items[$key] = $data->mapWithKeys(function ($val) use ($field) {
                     return [$val->{$field->getSelectKey()} => "{$val->{$field->getWith()}->{$field->getWithDisplayKey()}} - {$val->{$field->getDisplayKey()}}"];
                 });
@@ -115,15 +141,17 @@ class DevCrudModel extends Model implements DevCrudModelInterface
             }
         }
 
+        //dd($model->toSql());
+
         return $items;
     }
 
     /**
      * @param string $fieldName
      *
-     * @return \TunnelConflux\DevCrud\Models\JoinModel|null
+     * @return JoinModel|null
      */
-    public function getFormRelationalModel($fieldName): JoinModel
+    public function getRelationalModel($fieldName): JoinModel
     {
         return $this->relationalFields[$fieldName] ?? null;
     }
@@ -260,8 +288,100 @@ class DevCrudModel extends Model implements DevCrudModelInterface
         return $this;
     }
 
+    public function getFormAble()
+    {
+        $formItems = [];
+        $types = $this->inputTypes;
+        $dataItems = $this->requiredItems;
+
+        if (count($this->requiredItems) < 1) {
+            $dataItems = $this->fillable;
+        }
+
+        /*foreach ($this->infoItems as $item) {
+            $title = ucwords(str_replace('_', ' ', $item));
+
+            if (in_array($item, $types[InputTypes::TEXTAREA])) {
+                $formItems[$item] = new Formable($title, $item, InputTypes::TEXTAREA, $this->{$item});
+            } elseif (in_array($item, $types[InputTypes::SELECT])) {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::SELECT, $this->{$item}))
+                    ->setOptions(getStatus())
+                    ->setDisable(true);
+            } else {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::TEXT, $this->{$item}))->setDisable(true);
+            }
+        }*/
+
+        foreach ($dataItems as $item) {
+            /*if (in_array($item, $this->infoItems)) {
+                continue;
+            }*/
+
+            $title = ucwords(str_replace('_', ' ', $item));
+
+            if (in_array($item, $types[InputTypes::FILE])) {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::FILE));
+            } elseif (in_array($item, $types[InputTypes::IMAGE])) {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::IMAGE));
+            } elseif (in_array($item, $types[InputTypes::VIDEO])) {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::VIDEO));
+            } elseif (in_array($item, $types[InputTypes::TEXTAREA])) {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::TEXTAREA, $this->{$item}));
+            } elseif (in_array($item, $types[InputTypes::SELECT])) {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::SELECT, $this->{$item}))
+                    ->setOptions(Helper::getStatus());
+            } elseif (in_array($item, $types[InputTypes::YES_NO])) {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::SELECT, $this->{$item}))
+                    ->setOptions(Helper::getYesNo());
+            } else {
+                $formItems[$item] = (new Formable($title, $item, InputTypes::TEXT, $this->{$item}));
+            }
+        }
+
+        //dd($this->getRelationalFields(),$this->relationalFields);
+
+        foreach ($this->getRelationalFields() as $key => $item) {
+            $options = $item->toArray();
+            $multiple = false;
+            $title = ucwords(str_replace('_', ' ', $key));
+            $joinModel = $this->getRelationalModel($key);
+
+            if ($joinModel->getJoinType() == JoinTypes::ManyToMany) {
+                $multiple = true;
+            } elseif ($joinModel->getJoinType() == JoinTypes::OneToMany) {
+                $key = Str::snake(Str::singular($key)) . "_id";
+                Helper::arrayMerge($options, ["" => "Select an option"], true);
+            }
+
+            /*$options = app($item->getModel())->get();
+
+            if (!empty($item->getOptionPrefix())) {
+                $elements = $item->getOptionPrefix();
+                $prefixOptions = [];
+
+                if (isset($elements['join']) && isset($elements['key'])) {
+                    foreach ($options as $option) {
+                        $name = $option->{$item->getDisplayKey()};
+                        $prefix = $option->{$elements['join']}->{$elements['key']} ?? "";
+                        $prefixOptions[$option->{$item->getSelectKey()}] = trim("$prefix - $name", '- ');
+                    }
+                }
+
+                $options = $prefixOptions;
+            } else {
+                $options = $options->pluck($item->getDisplayKey(), $item->getSelectKey())->toArray();
+            }*/
+
+            $formItems[$key] = (new Formable($title, $key, InputTypes::SELECT, $this->{$key}))
+                ->setOptions($options)
+                ->setMultiple($multiple);
+        }
+
+        return $formItems;
+    }
+
     /*****************************************
-     ** Eloquent Model Scope Functions      **
+     **   Eloquent Model Scope Functions    **
      *****************************************/
 
     /**
@@ -273,7 +393,7 @@ class DevCrudModel extends Model implements DevCrudModelInterface
      */
     public function scopeOrderByWhereIn(Builder $query, $data, $column = 'id')
     {
-        $data = trimArray(explodeString($data));
+        $data = Helper::explodeString($data);
 
         if (count($data) > 0) {
             $query->orderByRaw("FIELD({$column}, " . implode(',', $data) . ")");
@@ -312,6 +432,6 @@ class DevCrudModel extends Model implements DevCrudModelInterface
      */
     public function scopeActive(Builder $query, $active = null)
     {
-        return (self::STATUS_NAME ? $query->where(self::STATUS_NAME, $active ?: self::ACTIVE_STATUS) : $query);
+        return (static::STATUS_NAME ? $query->where(static::STATUS_NAME, $active ?: static::ACTIVE_STATUS) : $query);
     }
 }
