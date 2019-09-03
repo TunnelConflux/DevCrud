@@ -1,13 +1,14 @@
 <?php
+
 /**
  * Project      : DevCrud
  * File Name    : DevCrudController.php
- * Author         : Abu Bakar Siddique
+ * Author       : Abu Bakar Siddique
  * Email        : absiddique.live@gmail.com
  * Date[Y/M/D]  : 2019/06/26 6:21 PM
  */
 
-namespace TunnelConflux\DevCrud\Http\Controllers;
+namespace TunnelConflux\DevCrud\Controllers;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
@@ -16,18 +17,18 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
-use TunnelConflux\DevCrud\Http\Traits\DevCrudTrait;
+use TunnelConflux\DevCrud\Helpers\DevCrudHelper as Helper;
 use TunnelConflux\DevCrud\Models\DevCrudModel;
+use TunnelConflux\DevCrud\Traits\DevCrudTrait;
 
 class DevCrudController extends Controller
 {
-    use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
-    use DevCrudTrait;
+    use AuthorizesRequests, DispatchesJobs, ValidatesRequests, DevCrudTrait;
 
-    const ACTION_SHOW   = 'show';
+    const ACTION_SHOW = 'show';
     const ACTION_CREATE = 'create';
-    const ACTION_STORE  = 'store';
-    const ACTION_EDIT   = 'edit';
+    const ACTION_STORE = 'store';
+    const ACTION_EDIT = 'edit';
     const ACTION_UPDATE = 'update';
     const ACTION_DELETE = 'delete';
 
@@ -58,48 +59,48 @@ class DevCrudController extends Controller
     public $actionMessage;
 
     public $isCreatable = true;
-    public $isEditable  = true;
-    public $isViewable  = true;
+    public $isEditable = true;
+    public $isViewable = true;
     public $isDeletable = true;
     public $infoItems;
     public $listColumns;
     public $itemPerPage = 15;
 
-    protected $homeRoute           = "dashboard";
+    protected $homeRoute = "dashboard";
     protected $redirectAfterAction = true;
 
     /**
-     * @var \TunnelConflux\DevCrud\Models\DevCrudModel
+     * @var DevCrudModel
      */
     protected $model;
 
     public function __construct(DevCrudModel $model)
     {
-        if (request()->route('id_or_slug')) {
-            $this->formActionId = request()->route('id_or_slug');
-        }
+        $route = Route::currentRouteName();
+        $routeParts = Helper::explodeString(Str::snake($route), '.');
 
-        $this->model       = $model;
-        $pageTag           = explode('.', Route::currentRouteName());
-        $this->page        = trim(ucwords(str_replace('-', ' ', $pageTag[0])));
-        $this->pageTitle   = ((ucwords(end($pageTag)) != 'Index' && count($pageTag) > 1) ? ucwords(end($pageTag)) . ' ' : '') . $this->page;
-        $this->formTitle   = $this->pageTitle;
-        $this->routePrefix = $pageTag[0];
-        $this->uploadPath  = getUploadPath($this->model);
+        $this->model = $model;
+        $this->page = Str::ucfirst(str_replace(['-', "_"], ' ', Helper::arrayFirst($routeParts)));
+        $this->pageTitle = $this->setPageTitle($this->page, Helper::arrayLast($routeParts));
+        $this->formTitle = $this->formTitle ?: $this->pageTitle;
+        $this->routePrefix = $this->routePrefix ?: Helper::arrayFirst($routeParts);
+        $this->uploadPath = Helper::getUploadPath($this->model);
 
-        $this->actionMessage           = [];
-        $this->formActionRoute         = Route::currentRouteName();
-        $this->formActionMethod        = (Route::is('*.edit') && $this->formActionId) ? 'PATCH' : 'POST';
-        $this->formRequiredItems       = $this->model->getRequiredItems();
-        $this->formIgnoreItems         = $this->model->getIgnoreItems();
+        $this->formActionId = request()->route('id_or_slug');
+        $this->actionMessage = [];
+        $this->formActionRoute = $route;
+        $this->formActionMethod = (Route::is('*.edit') && $this->formActionId) ? 'PATCH' : 'POST';
+        $this->formRequiredItems = $this->model->getRequiredItems();
+        $this->formIgnoreItems = $this->model->getIgnoreItems();
         $this->formIgnoreItemsOnUpdate = $this->model->getIgnoreItemsOnUpdate();
-        $this->formHasParents          = $this->model->getRelationalFields(request()->route('id_or_slug'), get_class($this->model));
+        $this->formHasParents = $this->model->getRelationalFields($this->formActionId, get_class($this->model));
 
-        $this->infoItems   = $this->model->getInfoItems();
+        $this->infoItems = $this->model->getInfoItems();
         $this->listColumns = $this->model->getListColumns();
 
         if (!Route::is('*.create')) {
-            $this->setData();
+            $this->prefetchData();
+            $this->checkPrefetchData($route);
         }
 
         if (Route::is('*.create') || Route::is('*.edit')) {
@@ -107,7 +108,7 @@ class DevCrudController extends Controller
         }
     }
 
-    public function setData()
+    public function prefetchData()
     {
         if ($this->formActionId) {
             $this->data = $this->model->with(array_keys($this->formHasParents))->find($this->formActionId);
@@ -125,43 +126,35 @@ class DevCrudController extends Controller
             $this->data = $query->paginate($this->itemPerPage);
             $this->setListColumns();
         }
-
-        $this->checkData();
     }
 
-    public function setListColumns()
+    public function checkPrefetchData($route = null)
     {
-        $listItem = [];
-        $data     = $this->model->getListColumns();
-
-        if (empty($data)) {
-            $data = $this->model->getFillable();
-        }
-
-        foreach ($data as $item) {
-            $title           = str_replace('order_index', 'order', $item);
-            $listItem[$item] = str_replace('_', ' ', $title);
-        }
-
-        $this->listColumns = $listItem;
-    }
-
-    public function checkData()
-    {
-        $pageTag = explode('.', Route::currentRouteName());
-
-        if ((!$this->data || !$this->formActionId) && in_array(strtolower(end($pageTag)), ["view", "edit", "delete"]) &&
-            basename($_SERVER['SCRIPT_NAME']) != 'artisan'
-        ) {
+        if ((!$this->data || !$this->formActionId) && preg_match("/\.(view|edit|delete)/i", $route)) {
+            // && basename($_SERVER['SCRIPT_NAME']) != 'artisan'
             $route = $this->routePrefix ? "{$this->routePrefix}.index" : env("CRUD_HOME_ROUTE", $this->homeRoute);
 
-            return redirect()->route(($route))->send();
+            return redirect()->route($route)->send();
         }
+    }
+
+    public function setPageTitle(string $title, string $preFix = "", string $subFix = "")
+    {
+        if (strtolower($preFix) == "index") {
+            return trim("List of " . Str::plural($title) . $subFix);
+        }
+
+        $preFix = (!preg_match("/{$preFix}/i", $title)) ? ucwords($preFix) : "";
+        $subFix = (!preg_match("/{$subFix}/i", $title)) ? ucwords($subFix) : "";
+
+        return trim("{$preFix} {$title} {$subFix}");
     }
 
     public function setFormItems()
     {
-        $formItems = [];
+        $this->formItems = $this->data ? $this->data->getFormable() : $this->model->getFormable();
+
+        /*$formItems = [];
         $types     = $this->model->getInputTypes();
         $dataItems = $this->formRequiredItems;
 
@@ -233,9 +226,24 @@ class DevCrudController extends Controller
             }
 
             $formItems[$key] = [$title, $select, $key, $item];
+        }*/
+    }
+
+    public function setListColumns()
+    {
+        $listItem = [];
+        $data = $this->model->getListColumns();
+
+        if (empty($data)) {
+            $data = $this->model->getFillable();
         }
 
-        $this->formItems = $formItems;
+        foreach ($data as $item) {
+            $title = str_replace('order_index', 'order', $item);
+            $listItem[$item] = str_replace('_', ' ', $title);
+        }
+
+        $this->listColumns = $listItem;
     }
 
     public function redirectToSingleView($url = null)
@@ -247,15 +255,20 @@ class DevCrudController extends Controller
         }
     }
 
+    public function getModel()
+    {
+        return $this->model;
+    }
+
     /**
      * @param $hasAccess
      *
-     * @return \Illuminate\Http\RedirectResponse|null
+     * @return RedirectResponse|null
      */
     public function hasAccess($hasAccess): ?RedirectResponse
     {
         $message = ['warning' => 'This Action is not permitted !'];
-        $query   = ["query" => request()->query('query'), "page" => request()->query('page')];
+        $query = ["query" => request()->query('query'), "page" => request()->query('page')];
 
         if (!$hasAccess) {
             return redirect()->route("{$this->routePrefix}.index", $query)->with($message)->send();

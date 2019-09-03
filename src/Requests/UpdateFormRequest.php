@@ -1,13 +1,11 @@
 <?php
 
-namespace TunnelConflux\DevCrud\Http\Requests;
+namespace TunnelConflux\DevCrud\Requests;
 
 use Exception;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Route;
-use TunnelConflux\DevCrud\Models\DevCrudModel;
 
-class SaveFormRequest extends FormRequest
+class UpdateFormRequest extends SaveFormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,31 +24,15 @@ class SaveFormRequest extends FormRequest
      */
     public function rules()
     {
+        $fields = parent::rules();
         /**
-         * @var \TunnelConflux\DevCrud\Http\Controllers\DevCrudController
+         * @var \TunnelConflux\DevCrud\Controllers\DevCrudController
          */
         $controller = $this->route()->controller ?? null;
-        $model      = $controller->model ?? null;
 
-        $fields = [];
-
-        if (!$model instanceof DevCrudModel) {
-            return $fields;
-        }
-
-        if (count($controller->formRequiredItems) > 0) {
-            foreach ($controller->formRequiredItems as $field) {
-                $fields[$field] = !in_array($field, $controller->formIgnoreItems) ? ['required'] : ['nullable'];
-            }
-        } else {
-            foreach ($model->getFillable() as $field) {
-                $fields[$field] = !in_array($field, $controller->formIgnoreItems) ? ['required'] : ['nullable'];
-            }
-        }
-
-        if (Route::is('*.edit') && count($controller->formUpdateIgnoreItems) > 0) {
+        if (Route::is('*.edit') && count($controller->formIgnoreItemsOnUpdate) > 0) {
             foreach ($fields as $key => $val) {
-                if (in_array($key, $controller->formUpdateIgnoreItems)) {
+                if (in_array($key, $controller->formIgnoreItemsOnUpdate)) {
                     try {
                         if (is_string($fields[$key])) {
                             $fields[$key] = str_replace("required", "nullable", $fields[$key]);
