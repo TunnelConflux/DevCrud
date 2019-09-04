@@ -146,7 +146,8 @@ trait DevCrudTrait
             }
         }
 
-        return redirect()->route($this->routePrefix . '.index', request()->only(['page', 'query']))->with($this->actionMessage);
+        return redirect()->route($this->routePrefix . '.index',
+            request()->only(['page', 'query']))->with($this->actionMessage);
     }
 
     public function combinePivot($entities, $pivots = [])
@@ -170,7 +171,7 @@ trait DevCrudTrait
     /**
      * Save files from request & assign as input
      *
-     * @param \Illuminate\Foundation\Http\FormRequest $request
+     * @param FormRequest $request
      *
      * @return array
      */
@@ -214,7 +215,7 @@ trait DevCrudTrait
                     }
                 } elseif ($joinModel->getJoinType() == JoinTypes::OneToMany) {
                     $key = Str::snake(Str::singular($key));
-                    $this->data->{$key . "_id"} = $inputs[$key . "_id"] ?? null;
+                    $this->data->{$key . "_id"} = $request->input($key . "_id") ?? null;
                     $this->data->save();
                 }
             }
