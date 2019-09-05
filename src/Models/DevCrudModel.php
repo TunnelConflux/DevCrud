@@ -21,7 +21,7 @@ use TunnelConflux\DevCrud\Models\Enums\JoinTypes;
 class DevCrudModel extends Model implements DevCrudModelContract
 {
     protected $inputTypes = [
-        InputTypes::FILE     => ['cv',],
+        InputTypes::FILE     => ['cv', 'attachment'],
         InputTypes::IMAGE    => [
             'cover',
             'image',
@@ -45,6 +45,7 @@ class DevCrudModel extends Model implements DevCrudModelContract
             'short_text',
             'address',
             'meta_description',
+            'message',
         ],
         InputTypes::SELECT   => ['status'],
         InputTypes::YES_NO   => [],
