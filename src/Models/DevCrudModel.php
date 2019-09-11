@@ -21,8 +21,8 @@ use TunnelConflux\DevCrud\Models\Enums\JoinTypes;
 class DevCrudModel extends Model implements DevCrudModelContract
 {
     protected $inputTypes = [
-        InputTypes::FILE     => ['cv', 'attachment'],
-        InputTypes::IMAGE    => [
+        InputTypes::FILE => ['cv', 'attachment'],
+        InputTypes::IMAGE => [
             'cover',
             'image',
             'thumb',
@@ -35,7 +35,7 @@ class DevCrudModel extends Model implements DevCrudModelContract
             'thumb_image_sd',
             'meta_image',
         ],
-        InputTypes::VIDEO    => ['video',],
+        InputTypes::VIDEO => ['video',],
         InputTypes::TEXTAREA => [
             'description',
             'short_description',
@@ -47,21 +47,21 @@ class DevCrudModel extends Model implements DevCrudModelContract
             'meta_description',
             'message',
         ],
-        InputTypes::SELECT   => ['status'],
-        InputTypes::YES_NO   => [],
+        InputTypes::SELECT => ['status'],
+        InputTypes::YES_NO => [],
     ];
 
-    protected $infoItems           = [];
-    protected $requiredItems       = [];
-    protected $readOnlyItems       = [];
-    protected $ignoreItems         = [];
+    protected $infoItems = [];
+    protected $requiredItems = [];
+    protected $readOnlyItems = [];
+    protected $ignoreItems = [];
     protected $ignoreItemsOnUpdate = [];
     /* @var JoinModel[] */
     protected $relationalFields = [];
-    protected $listColumns      = [];
-    protected $searchColumns    = [];
-    protected $autoSlug         = true;
-    protected $refreshSlug      = true;
+    protected $listColumns = [];
+    protected $searchColumns = [];
+    protected $autoSlug = true;
+    protected $refreshSlug = true;
 
     /**
      * The "booting" method of the model.
@@ -423,6 +423,19 @@ class DevCrudModel extends Model implements DevCrudModelContract
                 $q->orWhere($column, 'LIKE', "{$value}%");
             }
         });
+    }
+
+    /**
+     * @param Builder $query
+     * @param string  $column
+     * @param mixed   $starting
+     * @param mixed   $ending
+     *
+     * @return Builder
+     */
+    public function scopeInRange(Builder $query, string $column, $starting, $ending)
+    {
+        return $query->whereBetween($column, [$starting, $ending]);
     }
 
     /**

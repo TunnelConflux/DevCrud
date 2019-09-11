@@ -25,10 +25,10 @@ class DevCrudController extends Controller
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests, DevCrudTrait;
 
-    const ACTION_SHOW = 'show';
+    const ACTION_SHOW   = 'show';
     const ACTION_CREATE = 'create';
-    const ACTION_STORE = 'store';
-    const ACTION_EDIT = 'edit';
+    const ACTION_STORE  = 'store';
+    const ACTION_EDIT   = 'edit';
     const ACTION_UPDATE = 'update';
     const ACTION_DELETE = 'delete';
 
@@ -100,6 +100,7 @@ class DevCrudController extends Controller
 
         if (!Route::is('*.create')) {
             $this->prefetchData();
+            $this->setListColumns();
             $this->checkPrefetchData($route);
         }
 
@@ -108,7 +109,7 @@ class DevCrudController extends Controller
         }
     }
 
-    public function prefetchData()
+    public function prefetchData($justQuery = false)
     {
         if ($this->formActionId) {
             $this->data = $this->model->with(array_keys($this->formHasParents))->find($this->formActionId);
@@ -116,15 +117,22 @@ class DevCrudController extends Controller
             $query = $this->model;
 
             if ($value = request()->input('query')) {
-                $query = $query->searchAllColumns($value);
+                $query = $query->searchColumns($value);
             }
 
             if ($value = request()->input('date')) {
                 $query = $query->searchAllColumns($value, ["created_at"]);
             }
 
+            if (($startingDay = request()->input('starting-day')) && ($endingDay = request()->input('ending-day'))) {
+                $query = $query->inRange('created_at', $startingDay, $endingDay);
+            }
+
+            if($justQuery){
+                return $query;
+            }
+
             $this->data = $query->paginate($this->itemPerPage);
-            $this->setListColumns();
         }
     }
 
@@ -153,7 +161,6 @@ class DevCrudController extends Controller
     public function setFormItems()
     {
         $this->formItems = $this->data ? $this->data->getFormable() : $this->model->getFormable();
-
         /*$formItems = [];
         $types     = $this->model->getInputTypes();
         $dataItems = $this->formRequiredItems;
