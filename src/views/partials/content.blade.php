@@ -20,6 +20,7 @@
 <div class="content">
     <div class="container-fluid">
         @yield("content")
+        @yield('extra-row')
     </div>
 </div>
 <!-- /.content -->
