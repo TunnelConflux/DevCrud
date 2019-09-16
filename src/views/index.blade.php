@@ -16,7 +16,7 @@
                     <th>{{$item}}</th>
                 @endforeach
                 @if(@$isCreatable || @$isEditable  || @$isViewable  || @$isDeletable )
-                    <th style=" min-width: 80px; ">Action</th>
+                    <th style=" min-width: 152px; ">Action</th>
                 @endif
             </tr>
             </thead>
@@ -28,13 +28,13 @@
                     @foreach($listColumns as $k => $v)
                         @if (in_array($k, ['status', 'is_active']))
                             <td>{{ \TunnelConflux\DevCrud\Helpers\DevCrudHelper::getStatus(($item->{$k}?:0))}}</td>
-                        @elseif (@$formItems[$k][1] == 'image')
-                            <td><img style="max-height: 100px" src="{{ getFileUrl($uploadPath, $item->{$k}) }}" /></td>
-                        @elseif (is_object($item->{$k}))
-                            <td>{{ $item->{$k}->title }}</td>
+                        @elseif (in_array($v, $item->inputTypes[\TunnelConflux\DevCrud\Models\Enums\InputTypes::IMAGE]))
+                            <td><img style="max-height: 80px;max-width: 120px" src="{{ \TunnelConflux\DevCrud\Helpers\DevCrudHelper::getFileUrl($item, $item->{$v}) }}" /></td>
+                        @elseif (is_object($item->{$k}) && (isset($item->{$k}->title) || isset($item->{$k}->name)))
+                            <td>{{ $item->{$k}->title??$item->{$k}->name }}</td>
                         @else
                             @if(@$item->{$k})
-                                <td>{{ $item->{$k} }}</td>
+                                <td>{!! $item->{$k} !!}</td>
                             @else
                                 <td>N/A</td>
                             @endif
