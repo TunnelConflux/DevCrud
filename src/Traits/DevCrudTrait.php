@@ -223,4 +223,14 @@ trait DevCrudTrait
             Log::error("CRUD::CREATE_OR_UPDATE_ERROR, error: {$e->getMessage()}");
         }
     }
+
+    public function getValidationRules(): array
+    {
+        return [];
+    }
+
+    public function getValidationMessages(): array
+    {
+        return [];
+    }
 }

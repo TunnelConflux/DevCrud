@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use TunnelConflux\DevCrud\Helpers\DevCrudHelper;
 use TunnelConflux\DevCrud\Models\DevCrudModel;
 use TunnelConflux\DevCrud\Models\Enums\InputTypes;
+use TunnelConflux\DevCrud\Traits\DevCrudTrait;
 
 class SaveFormRequest extends FormRequest
 {
@@ -30,26 +31,39 @@ class SaveFormRequest extends FormRequest
          * @var \TunnelConflux\DevCrud\Controllers\DevCrudController
          */
         $controller = $this->route()->controller ?? null;
-        $model      = $controller->getModel() ?? null;
-        $fields     = [];
+        $model = $controller->getModel() ?? null;
+        $fields = [];
 
-        if (!$model instanceof DevCrudModel) {
+        if (!$model instanceof DevCrudModel || !$controller instanceof DevCrudTrait) {
             return $fields;
         }
+
+        $rules = $controller->getValidationRules() ?: [];
 
         if (count($controller->formRequiredItems) > 0) {
             foreach ($controller->formRequiredItems as $field) {
                 $fields[$field] = !in_array($field, $controller->formIgnoreItems) ? ['required'] : ['nullable'];
+
                 $this->checkFile($field, $fields, $model);
             }
         } else {
             foreach ($model->getFillable() as $field) {
                 $fields[$field] = !in_array($field, $controller->formIgnoreItems) ? ['required'] : ['nullable'];
+
                 $this->checkFile($field, $fields, $model);
             }
         }
 
+        if ($rules[$field] ?? null) {
+            $fields[$field] = $rules[$field];
+        }
+
         return $fields;
+    }
+
+    public function messages()
+    {
+        return $this->route()->controller->getValidationMessage();
     }
 
     protected function checkFile($field, &$fields, $model)
