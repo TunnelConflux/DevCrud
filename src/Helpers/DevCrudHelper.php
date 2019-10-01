@@ -258,11 +258,25 @@ REGEX;
         app("router")
             ->prefix($name)
             ->name("$routeName.")
-            ->group(function ($router) use ($controller, $delete, $update) {
+            ->group(function ($router) use ($controller, $delete, $update, $routeName) {
                 $router->get('/new', "{$controller}create")->name('create');
-                $router->post('/new', "{$controller}store")->name('create');
                 $router->get('/{id_or_slug}/edit', "{$controller}edit")->name('edit');
-                $router->{$update}('/{id_or_slug}/edit', "{$controller}update")->name('edit');
+
+                $namespace = app('router')->get("{$routeName}.index")->action['namespace'] ?? "";
+                $className = $namespace . '\\' . trim($controller, '@');
+
+                if (method_exists($className, 'store') && method_exists($className, 'customStore')) {
+                    $router->post('/new', "{$controller}customStore")->name('create');
+                } elseif (method_exists($className, 'store')) {
+                    $router->post('/new', "{$controller}store")->name('create');
+                }
+
+                if (method_exists($className, 'update') && method_exists($className, 'customUpdate')) {
+                    $router->{$update}('/{id_or_slug}/edit', "{$controller}customUpdate")->name('edit');
+                } elseif (method_exists($className, 'update')) {
+                    $router->{$update}('/{id_or_slug}/edit', "{$controller}update")->name('edit');
+                }
+
                 $router->get('/{id_or_slug}/view', "{$controller}show")->name('view');
                 $router->{$delete}('/{id_or_slug}/delete', "{$controller}destroy")->name('delete');
             });
