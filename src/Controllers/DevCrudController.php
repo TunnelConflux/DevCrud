@@ -17,13 +17,14 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
-use TunnelConflux\DevCrud\Helpers\DevCrudHelper as Helper;
-use TunnelConflux\DevCrud\Models\DevCrudModel;
-use TunnelConflux\DevCrud\Traits\DevCrudTrait;
+use TunnelConflux\DevCrud\Contracts\DevCrud as CrudContract;
+use TunnelConflux\DevCrud\Helpers\DevCrudHelper as CrudHelper;
+use TunnelConflux\DevCrud\Models\DevCrudModel as CrudModel;
+use TunnelConflux\DevCrud\Traits\DevCrudTrait as CrudTrait;
 
-class DevCrudController extends Controller
+class DevCrudController extends Controller implements CrudContract
 {
-    use AuthorizesRequests, DispatchesJobs, ValidatesRequests, DevCrudTrait;
+    use AuthorizesRequests, DispatchesJobs, ValidatesRequests, CrudTrait;
 
     const ACTION_SHOW   = 'show';
     const ACTION_CREATE = 'create';
@@ -74,17 +75,17 @@ class DevCrudController extends Controller
      */
     protected $model;
 
-    public function __construct(DevCrudModel $model)
+    public function __construct(CrudModel $model)
     {
         $route = Route::currentRouteName();
-        $routeParts = Helper::explodeString(Str::snake($route), '.');
+        $routeParts = CrudHelper::explodeString(Str::snake($route), '.');
 
         $this->model = $model;
-        $this->page = Str::ucfirst(str_replace(['-', "_"], ' ', Helper::arrayFirst($routeParts)));
-        $this->pageTitle = $this->setPageTitle($this->page, Helper::arrayLast($routeParts));
+        $this->page = Str::ucfirst(str_replace(['-', "_"], ' ', CrudHelper::arrayFirst($routeParts)));
+        $this->pageTitle = $this->setPageTitle($this->page, CrudHelper::arrayLast($routeParts));
         $this->formTitle = $this->formTitle ?: $this->pageTitle;
-        $this->routePrefix = $this->routePrefix ?: Helper::arrayFirst($routeParts);
-        $this->uploadPath = Helper::getUploadPath($this->model);
+        $this->routePrefix = $this->routePrefix ?: CrudHelper::arrayFirst($routeParts);
+        $this->uploadPath = CrudHelper::getUploadPath($this->model);
 
         $this->formActionId = request()->route('id_or_slug');
         $this->actionMessage = [];
@@ -128,7 +129,7 @@ class DevCrudController extends Controller
                 $query = $query->inRange('created_at', $startingDay, $endingDay);
             }
 
-            if($justQuery){
+            if ($justQuery) {
                 return $query;
             }
 

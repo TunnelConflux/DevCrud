@@ -11,6 +11,7 @@ namespace TunnelConflux\DevCrud\Traits;
 
 use Exception;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use TunnelConflux\DevCrud\Helpers\DevCrudHelper as Helper;
@@ -175,7 +176,7 @@ trait DevCrudTrait
      *
      * @return array
      */
-    public function saveFiles(FormRequest $request): array
+    public function saveFiles(Request $request): array
     {
         $files = [];
 
@@ -196,7 +197,7 @@ trait DevCrudTrait
         return $files;
     }
 
-    public function saveRelationalData(FormRequest $request)
+    public function saveRelationalData(Request $request)
     {
         try {
             foreach ($this->formHasParents as $key => $val) {
