@@ -63,7 +63,7 @@ class SaveFormRequest extends FormRequest
 
     public function messages()
     {
-        return $this->route()->controller->getValidationMessage();
+        return $this->route()->controller->getValidationMessages();
     }
 
     protected function checkFile($field, &$fields, $model)
