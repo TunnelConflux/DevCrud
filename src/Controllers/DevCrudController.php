@@ -26,10 +26,10 @@ class DevCrudController extends Controller implements CrudContract
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests, CrudTrait;
 
-    const ACTION_SHOW   = 'show';
+    const ACTION_SHOW = 'show';
     const ACTION_CREATE = 'create';
-    const ACTION_STORE  = 'store';
-    const ACTION_EDIT   = 'edit';
+    const ACTION_STORE = 'store';
+    const ACTION_EDIT = 'edit';
     const ACTION_UPDATE = 'update';
     const ACTION_DELETE = 'delete';
 
@@ -58,8 +58,9 @@ class DevCrudController extends Controller implements CrudContract
     public $paginate;
     public $uploadPath;
     public $actionMessage;
-
     public $isCreatable = true;
+
+    public $dateSearch = false;
     public $isEditable = true;
     public $isViewable = true;
     public $isDeletable = true;
@@ -71,7 +72,7 @@ class DevCrudController extends Controller implements CrudContract
     protected $redirectAfterAction = true;
 
     /**
-     * @var DevCrudModel
+     * @var \TunnelConflux\DevCrud\Models\DevCrudModel
      */
     protected $model;
 
@@ -110,7 +111,7 @@ class DevCrudController extends Controller implements CrudContract
         }
     }
 
-    public function prefetchData($justQuery = false)
+    public function prefetchData($justQuery = false): void
     {
         if ($this->formActionId) {
             $this->data = $this->model->with(array_keys($this->formHasParents))->find($this->formActionId);
@@ -122,15 +123,17 @@ class DevCrudController extends Controller implements CrudContract
             }
 
             if ($value = request()->input('date')) {
-                $query = $query->searchAllColumns($value, ["created_at"]);
+                $query = $query->searchAllColumns($value, [$query->dateSearchColumn]);
             }
 
             if (($startingDay = request()->input('starting-day')) && ($endingDay = request()->input('ending-day'))) {
-                $query = $query->inRange('created_at', $startingDay, $endingDay);
+                $query = $query->searchDateInRange($startingDay, $endingDay);
             }
 
             if ($justQuery) {
-                return $query;
+                $this->data = $query;
+
+                return;
             }
 
             $this->data = $query->paginate($this->itemPerPage);

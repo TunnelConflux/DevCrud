@@ -19,6 +19,7 @@ interface DevCrudModel
     const SLUG_FROM = "title";
     const STATUS_NAME = "status";
     const ACTIVE_STATUS = 1;
+    const DATE_SEARCH_COLUMN = "created_at";
 
     /**
      * @return array
@@ -34,7 +35,7 @@ interface DevCrudModel
 
     /**
      * @param int|string|null $ignore
-     * @param string|null $parentModel
+     * @param string|null     $parentModel
      *
      * @return array
      */
@@ -135,8 +136,8 @@ interface DevCrudModel
 
     /**
      * @param Builder $query
-     * @param string $data
-     * @param string $column
+     * @param string  $data
+     * @param string  $column
      *
      * @return Builder
      */
@@ -144,8 +145,8 @@ interface DevCrudModel
 
     /**
      * @param Builder $query
-     * @param mixed $value
-     * @param array $columns
+     * @param mixed   $value
+     * @param array   $columns
      *
      * @return Builder
      */
@@ -153,7 +154,16 @@ interface DevCrudModel
 
     /**
      * @param Builder $query
-     * @param int $active
+     * @param string  $starting
+     * @param string  $ending
+     *
+     * @return mixed
+     */
+    public function scopeSearchDateInRange(Builder $query, string $starting, string $ending);
+
+    /**
+     * @param Builder $query
+     * @param int     $active
      *
      * @return Builder
      */

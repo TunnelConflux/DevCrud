@@ -427,6 +427,14 @@ class DevCrudModel extends Model implements DevCrudModelContract
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public function scopeSearchDateInRange(Builder $query, string $starting, string $ending)
+    {
+        return $query->whereBetween(static::DATE_SEARCH_COLUMN, [$starting, $ending]);
+    }
+
+    /**
      * @param Builder $query
      * @param string  $column
      * @param mixed   $starting
