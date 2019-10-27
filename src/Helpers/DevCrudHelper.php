@@ -249,11 +249,8 @@ REGEX;
         $pluralName = Str::plural($routeName);
 
         app("router")
-            ->prefix($pluralName)
-            ->name("$routeName.")
-            ->group(function ($router) use ($controller, $delete, $update) {
-                $router->get('/', "{$controller}index")->name('index');
-            });
+            ->name("{$routeName}.index")
+            ->get("/{$pluralName}", "{$controller}index");
 
         app("router")
             ->prefix($name)
