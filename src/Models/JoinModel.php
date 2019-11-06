@@ -30,18 +30,19 @@ class JoinModel
     protected $scopes;
     protected $pivotExtra = [];
     protected $optionPrefix = [];
+    protected $enableSelectAll = false;
 
     /**
      * JoinModel constructor.
      *
-     * @param string $model
-     * @param string $selectKey
-     * @param string $displayKey
+     * @param string      $model
+     * @param string      $selectKey
+     * @param string      $displayKey
      * @param null|string $ignoreKey
-     * @param string $joinType
+     * @param string      $joinType
      * @param null|string $with
      * @param null|string $withDisplayKey
-     * @param array $scopes
+     * @param array       $scopes
      */
     public function __construct(
         $model,
@@ -52,7 +53,8 @@ class JoinModel
         array $scopes = [],
         $with = null,
         $withDisplayKey = "title"
-    ) {
+    )
+    {
         $this->model = $model;
         $this->selectKey = $selectKey;
         $this->displayKey = $displayKey;
@@ -213,7 +215,7 @@ class JoinModel
 
     /**
      * @param array|string $scopes
-     * @param bool $replace
+     * @param bool         $replace
      *
      * @return JoinModel
      */
@@ -270,6 +272,26 @@ class JoinModel
     public function setOptionPrefix(array $optionPrefix): self
     {
         $this->optionPrefix = $optionPrefix;
+
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isEnableSelectAll(): bool
+    {
+        return $this->enableSelectAll;
+    }
+
+    /**
+     * @param bool $enable
+     *
+     * @return self
+     */
+    public function setEnableSelectAll(bool $enable): self
+    {
+        $this->enableSelectAll = $enable;
 
         return $this;
     }

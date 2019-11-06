@@ -353,6 +353,10 @@ class DevCrudModel extends Model implements DevCrudModelContract
             } elseif ($joinModel->getJoinType() == JoinTypes::OneToMany) {
                 $key = Str::snake(Str::singular($key)) . "_id";
                 Helper::arrayMerge($options, ["" => "Select an option"], true);
+
+                if ($joinModel->isEnableSelectAll()) {
+                    Helper::arrayMerge($options, [" " => "ALL"], true);
+                }
             }
 
             /*$options = app($item->getModel())->get();
