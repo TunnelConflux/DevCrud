@@ -34,7 +34,7 @@ class SaveFormRequest extends FormRequest
         $model = $controller->getModel() ?? null;
         $fields = [];
 
-        if (!$model instanceof DevCrudModel || !$controller instanceof DevCrudTrait) {
+        if (!$model instanceof DevCrudModel && !$controller instanceof DevCrudTrait) {
             return $fields;
         }
 
