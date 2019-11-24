@@ -39,23 +39,16 @@ class SaveFormRequest extends FormRequest
         }
 
         $rules = $controller->getValidationRules() ?: [];
+        $mFields = (count($controller->formRequiredItems) > 0) ? $controller->formRequiredItems : $model->getFillable();
 
-        if (count($controller->formRequiredItems) > 0) {
-            foreach ($controller->formRequiredItems as $field) {
-                $fields[$field] = !in_array($field, $controller->formIgnoreItems) ? ['required'] : ['nullable'];
+        foreach ($mFields as $field) {
+            $fields[$field] = !in_array($field, $controller->formIgnoreItems) ? ['required'] : ['nullable'];
 
-                $this->checkFile($field, $fields, $model);
+            $this->checkFile($field, $fields, $model);
+
+            if ($rules[$field] ?? null) {
+                $fields[$field] = $rules[$field];
             }
-        } else {
-            foreach ($model->getFillable() as $field) {
-                $fields[$field] = !in_array($field, $controller->formIgnoreItems) ? ['required'] : ['nullable'];
-
-                $this->checkFile($field, $fields, $model);
-            }
-        }
-
-        if ($rules[$field] ?? null) {
-            $fields[$field] = $rules[$field];
         }
 
         return $fields;
