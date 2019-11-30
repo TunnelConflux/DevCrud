@@ -10,6 +10,7 @@
 
 namespace TunnelConflux\DevCrud\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -123,11 +124,14 @@ class DevCrudController extends Controller implements CrudContract
             }
 
             if ($value = request()->input('date')) {
-                $query = $query->searchAllColumns($value, [$query->dateSearchColumn]);
+                $query = $query->searchAllColumns(Carbon::parse($value)->format('Y-m-d'), [$query->dateSearchColumn]);
             }
 
             if (($startingDay = request()->input('starting-day')) && ($endingDay = request()->input('ending-day'))) {
-                $query = $query->searchDateInRange($startingDay, $endingDay);
+                $query = $query->searchDateInRange(
+                    Carbon::parse($startingDay)->startOfDay(),
+                    Carbon::parse($endingDay)->endOfDay()
+                );
             }
 
             if ($justQuery) {
