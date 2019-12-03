@@ -51,7 +51,7 @@ class DevCrudController extends Controller implements CrudContract
     public $formActionId;
     public $formActionRoute;
     public $formActionMethod;
-    public $formIgnoreItems;
+    public $formIgnoreItems = [];
     public $formRequiredItems = [];
     public $formIgnoreItemsOnUpdate;
     public $formHasParents;

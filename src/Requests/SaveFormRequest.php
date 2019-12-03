@@ -2,7 +2,9 @@
 
 namespace TunnelConflux\DevCrud\Requests;
 
+use Exception;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use TunnelConflux\DevCrud\Helpers\DevCrudHelper;
 use TunnelConflux\DevCrud\Models\DevCrudModel;
 use TunnelConflux\DevCrud\Models\Enums\InputTypes;
@@ -51,6 +53,8 @@ class SaveFormRequest extends FormRequest
             }
         }
 
+        $this->checkNullable($fields, $controller->formIgnoreItems);
+
         return $fields;
     }
 
@@ -65,6 +69,27 @@ class SaveFormRequest extends FormRequest
             DevCrudHelper::arrayPush($fields[$field], 'image');
         } elseif (in_array($field, $model->getInputTypes()[InputTypes::FILE])) {
             DevCrudHelper::arrayPush($fields[$field], 'file');
+        }
+    }
+
+    protected function checkNullable(&$rules, $fields)
+    {
+        foreach ($rules as $key => $value) {
+            if (in_array($key, $fields)) {
+                try {
+                    if (is_string($value)) {
+                        $rules[$key] = str_replace("required", "nullable", $rules[$key]);
+                    } elseif (is_array($value) && count((array)$value) > 0) {
+                        $rules[$key] = array_map(function ($v) {
+                            return ($v == "required") ? "nullable" : $v;
+                        }, $rules[$key]);
+                    } else {
+                        $rules[$key] = ["nullable"];
+                    }
+                } catch (Exception $e) {
+                    Log::warning("DevCrud: Some error in Save form request");
+                }
+            }
         }
     }
 }
