@@ -4,59 +4,64 @@
     {{ $pageTitle }}
 @endsection
 
+<?php use TunnelConflux\DevCrud\Models\Enums\InputTypes;$images = $data->inputTypes[InputTypes::IMAGE] ?>
+
 @section('dataBlock')
     <div class="card-body text-justify">
-        <div class="col-md-6">
-            @foreach($infoItems as $val)
-                @if ($val == 'status')
-                    <label>{{ ucwords(str_replace('_', ' ', $val)) }}: </label>
-                    {{ \TunnelConflux\DevCrud\Helpers\DevCrudHelper::getStatus(($data->{$val}?:0)) }} <br>
-                @elseif(!in_array(@$infoItems[$val][1], ['image', 'file', 'video']) && $val != 'password')
-                    @php
-                        $tempKey = str_replace(['_id', '_'], ['',' '], $val);
-                    @endphp
-                    <label>{{ ucwords($tempKey) }}: </label>
-                    @if (is_iterable($data->{$tempKey}))
-                        @foreach($data->{$tempKey} as $k => $v)
-                            @if (isset($v->title))
-                                <br /> <i class="fa fa-angle-right"></i> {{ $v->title }}
-                            @elseif (isset($v->display_name))
-                                <br /> <i class="fa fa-angle-right"></i> {{ $v->display_name }}
-                            @elseif (isset($v->name))
-                                <br /> <i class="fa fa-angle-right"></i> {{ $v->name }}
+        <div class="row">
+            <div class="col-md-6">
+                @foreach($infoItems as $val)
+                    @if ($val == 'status')
+                        <label>{{ ucwords(str_replace('_', ' ', $val)) }}: </label>
+                        {{ \TunnelConflux\DevCrud\Helpers\DevCrudHelper::getStatus(($data->{$val}?:0)) }} <br>
+                    @elseif(!in_array($val, ['image', 'file', 'video'] + $images) && $val != 'password')
+                        @php
+                            $tempKey = str_replace('_id', '', $val);
+                            $tempTitle = str_replace(['_id', '_'], ['',' '], $val)
+                        @endphp
+                        <label>{{ ucwords($tempTitle) }}: </label>
+                        @if (is_iterable($data->{$tempKey}))
+                            @foreach($data->{$tempKey} as $k => $v)
+                                @if (isset($v->title))
+                                    <br /> <i class="fa fa-angle-right"></i> {{ $v->title }}
+                                @elseif (isset($v->display_name))
+                                    <br /> <i class="fa fa-angle-right"></i> {{ $v->display_name }}
+                                @elseif (isset($v->name))
+                                    <br /> <i class="fa fa-angle-right"></i> {{ $v->name }}
+                                @endif
+                            @endforeach
+                            <br />
+                        @elseif (is_object($data->{$tempKey}))
+                            @if (isset($data->{$tempKey}->title))
+                                {{ $data->{$tempKey}->title }}
+                            @elseif (isset($data->{$tempKey}->display_name))
+                                {{ $data->{$tempKey}->display_name }}
+                            @elseif (isset($data->{$tempKey}->name))
+                                {{ $data->{$tempKey}->name }}
                             @endif
-                        @endforeach
-                        <br />
-                    @elseif (is_object($data->{$tempKey}))
-                        @if (isset($data->{$tempKey}->title))
-                            <br /> <i class="fa fa-angle-right"></i> {{ $data->{$tempKey}->title }}
-                        @elseif (isset($data->{$tempKey}->display_name))
-                            <br /> <i class="fa fa-angle-right"></i> {{ $data->{$tempKey}->display_name }}
-                        @elseif (isset($data->{$tempKey}->name))
-                            <br /> <i class="fa fa-angle-right"></i> {{ $data->{$tempKey}->name }}
-                        @endif
-                        <br />
-                    @else
-                        @if (preg_match("/(content|description)/i",$val))
-                            <p>{{ $data->{$val}?strip_tags($data->{$val}):"N/A" }}</p>
+                            <br />
                         @else
-                            {{ $data->{$val}?:"N/A" }} <br>
+                            @if (preg_match("/(content|description)/i",$val))
+                                <p>{{ $data->{$val}?strip_tags($data->{$val}):"N/A" }}</p>
+                            @else
+                                {{ $data->{$tempKey}?:"N/A" }} <br>
+                            @endif
                         @endif
                     @endif
-                @endif
-            @endforeach
-        </div>
-        <div class="col-md-6">
-            @foreach($infoItems as $key => $val)
-                @if (@$infoItems[$key][1] == 'image' && $data->{$key})
-                    @if(file_exists($uploadPath.'/'.$data->{$key}))
-                        <div class="col-md-6 float-left" style="padding: 2px;background: #2d28283d;">
-                            <label class="text-center">{{ ucwords(str_replace('_', ' ', $key)) }}</label>
-                            <img width="100%" src="{{ getFileUrl($uploadPath, $data->{$key}) }}" />
-                        </div>
+                @endforeach
+            </div>
+            <div class="col-md-6">
+                @foreach($infoItems as $key => $val)
+                    @if (in_array($val, $images) && $data->{$val})
+                        @if(file_exists($uploadPath . '/' . $data->{$key}))
+                            <div class="col-md-6 float-right" style="padding: 2px;background: #2d28283d;">
+                                <label class="text-center">{{ ucwords(str_replace('_', ' ', $val)) }}</label>
+                                <img width="100%" src="{{ \TunnelConflux\DevCrud\Helpers\DevCrudHelper::getFileUrl($uploadPath, $data->{$val}) }}" />
+                            </div>
+                        @endif
                     @endif
-                @endif
-            @endforeach
+                @endforeach
+            </div>
         </div>
     </div>
     <div class="card-footer">
