@@ -18,6 +18,10 @@ use TunnelConflux\DevCrud\Helpers\DevCrudHelper as Helper;
 use TunnelConflux\DevCrud\Models\Enums\InputTypes;
 use TunnelConflux\DevCrud\Models\Enums\JoinTypes;
 
+/**
+ * @method self searchColumns(string $value, array $columns = [])
+ * @method self searchInRelations(string $value, array $relations = [])
+ */
 class DevCrudModel extends Model implements DevCrudModelContract
 {
     public $inputTypes = [
@@ -61,6 +65,12 @@ class DevCrudModel extends Model implements DevCrudModelContract
     protected $relationalFields = [];
     protected $listColumns = [];
     protected $searchColumns = [];
+    /**
+     * Relational fields to search in relational table
+     *
+     * @var \TunnelConflux\DevCrud\Models\SearchInRelation[]
+     */
+    protected $searchRelations = [];
     protected $autoSlug = true;
     protected $refreshSlug = true;
 
@@ -409,14 +419,14 @@ class DevCrudModel extends Model implements DevCrudModelContract
     }
 
     /**
-     * @param Builder $query
-     * @param mixed   $value
-     * @param array   $columns
-     *
-     * @return Builder
+     * {@inheritDoc}
      */
-    public function scopeSearchColumns(Builder $query, $value, array $columns = [])
+    public function scopeSearchColumns(Builder $query, string $value, array $columns = [])
     {
+        if (is_bool($this->searchColumns) && !$this->searchColumns) {
+            return $query;
+        }
+
         $columns = empty($columns) ? $this->searchColumns : $columns;
 
         if (empty($columns)) {
@@ -428,6 +438,26 @@ class DevCrudModel extends Model implements DevCrudModelContract
                 $q->orWhere($column, 'LIKE', "{$value}%");
             }
         });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function scopeSearchInRelations(Builder $query, string $value, array $relations = [])
+    {
+        $relations = empty($relations) ? $this->searchRelations : $relations;
+
+        foreach ($relations as $relation) {
+            $query->orWhereHas($relation->name, function ($q) use ($relation, $value) {
+                $q->where(function ($subQuery) use ($relation, $value) {
+                    foreach ($relation->columns as $column) {
+                        $subQuery->orWhere($column, 'LIKE', "{$value}%");
+                    }
+                });
+            });
+        }
+
+        return $query;
     }
 
     /**

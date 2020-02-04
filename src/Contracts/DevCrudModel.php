@@ -150,7 +150,16 @@ interface DevCrudModel
      *
      * @return Builder
      */
-    public function scopeSearchColumns(Builder $query, $value, array $columns = []);
+    public function scopeSearchColumns(Builder $query, string $value, array $columns = []);
+
+    /**
+     * @param \Illuminate\Database\Eloquent\Builder            $query
+     * @param mixed                                            $value
+     * @param \TunnelConflux\DevCrud\Models\SearchInRelation[] $relations
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearchInRelations(Builder $query, string $value, array $relations = []);
 
     /**
      * @param Builder $query

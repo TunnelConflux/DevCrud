@@ -117,10 +117,16 @@ class DevCrudController extends Controller implements CrudContract
         if ($this->formActionId) {
             $this->data = $this->model->with(array_keys($this->formHasParents))->find($this->formActionId);
         } else {
+            /**
+             * It actually a Laravel query builder, but we set type as model for better property suggestion
+             *
+             * @var \TunnelConflux\DevCrud\Models\DevCrudModel
+             */
             $query = $this->model;
 
             if ($value = request()->input('query')) {
                 $query = $query->searchColumns($value);
+                $query = $query->searchInRelations($value);
             }
 
             if ($value = request()->input('date')) {
